@@ -35,9 +35,7 @@ TeX Live 2026 を WebAssembly 化した [BusyTeX](https://github.com/busytex/bus
 - 初回は TeX Live の WASM（約 32 MB）とパッケージデータ（recommended 201 MB / extra 342 MB）をダウンロードします。
   2 回目以降はブラウザのキャッシュ（IndexedDB）から読み込みます。
 - 日本語組版用の追加パッケージ（`public/core/texmf-extra/`）は TeX Live 2026 の時期に合わせたバージョンに固定しています：
-  LuaTeX-ja 20260130.1、原ノ味フォント 20250811、jlreq（2026-02-26 のコミット）、Adobe-Japan1 CMap。
-  TeX Live の WASM ビルドに入っていない `kanbun` v1.3 は `vendor/kanbun/` に、
-  解答欄パッケージ `answerbox` / `answerboxHK` は `vendor/answerbox/` にリポジトリ内保存しています（`\usepackage{answerbox}` などで使用可）。
+  LuaTeX-ja 20260130.1、原ノ味フォント 20250811、jlreq（2026-02-26 のコミット）、Adobe-Japan1 CMap。は `vendor/answerbox/` にリポジトリ内保存しています（`\usepackage{answerbox}` などで使用可）。
   TeX Live に無いファイルはエンジンがこのディレクトリから必要な分だけ取得します（`scripts/fetch-extras.mjs`）。
 - 自作の `.sty` / `.cls` / フォントはプロジェクトにアップロードすればそのまま使えます（例: `\usepackage{mystyle}`、サブフォルダなら `\usepackage{sty/mystyle}`）。
 - `--shell-escape` を必要とするパッケージ（`minted` など）や、外部ツールが必要な変換（EPS/SVG → PDF）は使えません。
