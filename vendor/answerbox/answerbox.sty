@@ -1,0 +1,802 @@
+%%
+%% This is file `answerbox.sty',
+%% Copyright (C) 2017-2022 by hohei.
+%%
+%% This program is distributed in the hope that it will be useful,
+%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+%%
+
+% \NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{answerbox}[2021/11/14, v1.50]
+\RequirePackage{tikz}
+\usetikzlibrary{calc,positioning}
+\RequirePackage{etoolbox,xkeyval}
+\RequirePackage{xcolor}
+
+
+% 単位(pt)を取る
+\newdimen\zero\relax
+\zero=0pt
+\begingroup
+  \catcode`P=12
+  \catcode`T=12
+  \lowercase{%
+    \def\x{\def\rempt##1.##2PT{##1\ifnum##2>\zero.##2\fi}}}
+  \expandafter\endgroup\x
+
+\def\strippt{\expandafter\rempt\the}
+
+
+% 小問番号
+\newcommand{\shoumon@num}[1]{%
+  \ifcase#1 \or (1)\or (2)\or (3)\or (4)\or (5)\or (6)\or (7)\or%
+    (8)\or (9)\or (10)\or (11)\or (12)\or (13)\or (14)\or (15)\or%
+    (16)\or (17)\or (18)\or (19)\or (20)\or%
+    (21)\or (22)\or (23)\or (24)\or (25)\or%
+    (26)\or (27)\or (28)\or (29)\or (30)\or%
+    (31)\or (32)\or (33)\or (34)\or (35)\or%
+    (36)\or (37)\or (38)\or (39)\or (40)\or%
+    (41)\or (42)\or (43)\or (44)\or (45)\or%
+    (46)\or (47)\or (48)\or (49)\or (50)\or%
+    (51)\or (52)\or (53)\or (54)\or (55)\or%
+    (56)\or (57)\or (58)\or (59)\or (60)\or%
+    (61)\or (62)\or (63)\or (64)\or (65)\or%
+    (66)\or (67)\or (68)\or (69)\or (70)\or%
+    (71)\or (72)\or (73)\or (74)\or (75)\or%
+    (76)\or (77)\or (78)\or (79)\or (80)\or%
+    (81)\or (82)\or (83)\or (84)\or (85)\or%
+    (86)\or (87)\or (88)\or (89)\or (90)\or%
+    (91)\or (92)\or (93)\or (94)\or (95)\or%
+    (96)\or (97)\or (98)\or (99)\or (100)\fi}
+
+\newcommand{\shoumon@flatnum}[1]{%
+  \ifcase#1 \or 1\or 2\or 3\or 4\or 5\or 6\or 7\or%
+    8\or 9\or 10\or 11\or 12\or 13\or 14\or 15\or%
+    16\or 17\or 18\or 19\or 20\or%
+    21\or 22\or 23\or 24\or 25\or%
+    26\or 27\or 28\or 29\or 30\or%
+    31\or 32\or 33\or 34\or 35\or%
+    36\or 37\or 38\or 39\or 40\or%
+    41\or 42\or 43\or 44\or 45\or%
+    46\or 47\or 48\or 49\or 50\or%
+    51\or 52\or 53\or 54\or 55\or%
+    56\or 57\or 58\or 59\or 60\or%
+    61\or 62\or 63\or 64\or 65\or%
+    66\or 67\or 68\or 69\or 70\or%
+    71\or 72\or 73\or 74\or 75\or%
+    76\or 77\or 78\or 79\or 80\or%
+    81\or 82\or 83\or 84\or 85\or%
+    86\or 87\or 88\or 89\or 90\or%
+    91\or 92\or 93\or 94\or 95\or%
+    96\or 97\or 98\or 99\or 100\fi}
+
+\newcommand{\shoumon@kana}[1]{%
+  \textbf{\ifcase#1 \or あ\or い\or う\or え\or お\or
+                        か\or き\or く\or け\or こ\or
+                        さ\or し\or す\or せ\or そ\or
+                        た\or ち\or つ\or て\or と\or
+                        な\or に\or ぬ\or ね\or の\or
+                        は\or ひ\or ふ\or へ\or ほ\or
+                        ま\or み\or む\or め\or も\or
+                        や\or ゆ\or よ\or
+                        ら\or り\or る\or れ\or ろ\or
+                        わ\or を\or ん\fi}}
+
+\newcommand{\shoumon@KANA}[1]{%
+  \textbf{\ifcase#1 \or ア\or イ\or ウ\or エ\or オ\or
+                        カ\or キ\or ク\or ケ\or コ\or
+                        サ\or シ\or ス\or セ\or ソ\or
+                        タ\or チ\or ツ\or テ\or ト\or
+                        ナ\or ニ\or ヌ\or ネ\or ノ\or
+                        ハ\or ヒ\or フ\or ヘ\or ホ\or
+                        マ\or ミ\or ム\or メ\or モ\or
+                        ヤ\or ユ\or ヨ\or
+                        ラ\or リ\or ル\or レ\or ロ\or
+                        ワ\or ヲ\or ン\fi}}
+
+\newcommand{\shoumon@iroha}[1]{%
+  \textbf{\ifcase#1 \or い\or ろ\or は\or に\or ほ\or
+                        へ\or と\or ち\or り\or ぬ\or
+                        る\or を\or わ\or か\or よ\or
+                        た\or れ\or そ\or つ\or ね\or
+                        な\or ら\or む\or う\or ゐ\or
+                        の\or お\or く\or や\or ま\or
+                        け\or ふ\or こ\or え\or て\or
+                        あ\or さ\or き\or ゆ\or め\or
+                        み\or し\or ゑ\or ひ\or も\or
+                        せ\or す\or ん\fi}}
+
+\newcommand{\shoumon@IROHA}[1]{%
+  \textbf{\ifcase#1 \or イ\or ロ\or ハ\or ニ\or ホ\or
+                        ヘ\or ト\or チ\or リ\or ヌ\or
+                        ル\or ヲ\or ワ\or カ\or ヨ\or
+                        タ\or レ\or ソ\or ツ\or ネ\or
+                        ナ\or ラ\or ム\or ウ\or ヰ\or
+                        ノ\or オ\or ク\or ヤ\or マ\or
+                        ケ\or フ\or コ\or エ\or テ\or
+                        ア\or サ\or キ\or ユ\or メ\or
+                        ミ\or シ\or ヱ\or ヒ\or モ\or
+                        セ\or ス\or ン\fi}}
+
+\newcommand{\shoumon@alphabet}[1]{%
+  \textbf{\ifcase#1 \or a\or b\or c\or d\or e\or
+                        f\or g\or h\or i\or j\or
+                        k\or l\or m\or n\or o\or
+                        p\or q\or r\or s\or t\or
+                        u\or v\or w\or x\or y\or
+                        z\fi}}
+
+\newcommand{\shoumon@ALPHABET}[1]{%
+  \textbf{\ifcase#1 \or A\or B\or C\or D\or E\or
+                        F\or G\or H\or I\or J\or
+                        K\or L\or M\or N\or O\or
+                        P\or Q\or R\or S\or T\or
+                        U\or V\or W\or X\or Y\or
+                        Z\fi}}
+
+\newcommand{\@kuMARU}[1]{{%
+  \ooalign{\hfil
+    \@ifundefined{scalebox}{%
+      #1\/\hfil\crcr\raise.167ex}{\raise.1zw\hbox{\scalebox{0.8}{#1\/}}\hfil\crcr\raise.1zw}%
+    \hbox{\fontencoding{OMS}\fontfamily{cmsy}\fontseries{m}\fontshape{n}\selectfont
+      \char"0D}}}}
+
+\newcommand{\shoumon@MARUnum}[1]{%
+    \textbf{\ifcase#1 \or \@kuMARU{1}\or \@kuMARU{2}\or \@kuMARU{3}\or \@kuMARU{4}\or \@kuMARU{5}\or \@kuMARU{6}\or \@kuMARU{7}\or%
+    \@kuMARU{8}\or \@kuMARU{9}\or \@kuMARU{10}\or \@kuMARU{11}\or \@kuMARU{12}\or \@kuMARU{13}\or \@kuMARU{14}\or \@kuMARU{15}\or%
+    \@kuMARU{16}\or \@kuMARU{17}\or \@kuMARU{18}\or \@kuMARU{19}\or \@kuMARU{20}\or%
+    \@kuMARU{21}\or \@kuMARU{22}\or \@kuMARU{23}\or \@kuMARU{24}\or \@kuMARU{25}\or%
+    \@kuMARU{26}\or \@kuMARU{27}\or \@kuMARU{28}\or \@kuMARU{29}\or \@kuMARU{30}\or%
+    \@kuMARU{31}\or \@kuMARU{32}\or \@kuMARU{33}\or \@kuMARU{34}\or \@kuMARU{35}\or%
+    \@kuMARU{36}\or \@kuMARU{37}\or \@kuMARU{38}\or \@kuMARU{39}\or \@kuMARU{40}\or%
+    \@kuMARU{41}\or \@kuMARU{42}\or \@kuMARU{43}\or \@kuMARU{44}\or \@kuMARU{45}\or%
+    \@kuMARU{46}\or \@kuMARU{47}\or \@kuMARU{48}\or \@kuMARU{49}\or \@kuMARU{50}\fi}}
+
+% デフォの番号を数字
+\let\@shoumon@kigou=\shoumon@num
+
+\newcommand{\M@JIRETSU}{(1)}% <---default
+\newcommand{\S@chgnum}{(1)}
+\newcommand{\S@chgflatnum}{1}
+\newcommand{\S@chgMARUnum}{①}
+\newcommand{\S@chgkana}{あ}
+\newcommand{\S@chgKANA}{ア}
+\newcommand{\S@chgalpha}{a}
+\newcommand{\S@chgALPHA}{A}
+\newcommand{\S@chgiroha}{い}
+\newcommand{\S@chgIROHA}{イ}
+
+\makeatletter
+\newcommand{\schg}[1]{
+  \renewcommand{\M@JIRETSU}{#1}
+\ifx \M@JIRETSU\S@chgnum
+  \let\@shoumon@kigou=\shoumon@num
+\else
+  \ifx \M@JIRETSU\S@chgflatnum
+    \let\@shoumon@kigou=\shoumon@flatnum
+  \else
+    \ifx \M@JIRETSU\S@chgMARUnum
+      \let\@shoumon@kigou=\shoumon@MARUnum
+    \else
+      \ifx \M@JIRETSU\S@chgkana
+        \let\@shoumon@kigou=\shoumon@kana
+      \else
+        \ifx \M@JIRETSU\S@chgKANA
+          \let\@shoumon@kigou=\shoumon@KANA
+        \else
+          \ifx \M@JIRETSU\S@chgiroha
+            \let\@shoumon@kigou=\shoumon@iroha
+          \else
+            \ifx \M@JIRETSU\S@chgIROHA
+              \let\@shoumon@kigou=\shoumon@IROHA
+          \else
+            \ifx \M@JIRETSU\S@chgalpha
+              \let\@shoumon@kigou=\shoumon@alphabet
+          \else
+            \ifx \M@JIRETSU\S@chgALPHA
+              \let\@shoumon@kigou=\shoumon@ALPHABET
+%
+            \else
+              \let\@shoumon@kigou=\shoumon@num
+            \fi
+            \fi
+            \fi
+          \fi
+        \fi
+      \fi
+    \fi
+  \fi
+\fi
+}
+\makeatother
+
+
+% 小問番号の文字列変更
+\makeatletter
+\newcommand{\sxchg}[2]{%
+  \patchcmd{\@shoumon@kigou}{#1}{#2}{\message{success}}{\message{failure}};
+}
+\makeatother
+
+% 大問番号
+\newcounter{daimon@bangou}
+\setcounter{daimon@bangou}{0}
+
+% 太さの定義
+\makeatletter
+\def\@FUTOSA#1{%
+  \ifcase#1 \or 0.1\p@\or 0.2\p@\or 0.4\p@\or 0.6\p@\or 0.8\p@\or 1.2\p@\or 1.6\p@\or 2.0\p@\or 2.4\p@\or 2.8\p@\fi}
+\makeatother
+
+
+% 箱の太さの変更
+\makeatletter
+% 太さの関数
+\newcommand{\box@thickness}[1]{%
+\@cotA=0
+\@cotB=0
+%
+  \@futosa=\@FUTOSA{#1}
+%
+  \@cotA=#1
+  \advance\@cotA by 1
+  \ifnum\@cotA>10
+    \@Dfutosa=\@FUTOSA{10}
+  \else
+    \@Dfutosa=\@FUTOSA{\@cotA}% 大問の太さ
+  \fi
+%
+  \@cotB=#1
+  \advance\@cotB by -1
+  \ifnum\@cotB<1
+    \@Hfutosa=\@FUTOSA{1}
+  \else
+    \@Hfutosa=\@FUTOSA{\@cotB}% 破線の太さ
+  \fi
+}%
+\makeatother
+
+\makeatletter
+  \newcount\@cotA
+  \newcount\@cotB
+  \newcount\@cotC
+  \newcount\@cotD
+  \newcount\@cotX
+  \newcount\@cotY
+  \newdimen\@dimA
+  \newdimen\@dimB
+  \newdimen\@dimX
+% 小問の箱の番号の部分を除いた，セル1つ分の長さ
+  \newdimen\haba@shoumon
+% 小問番号
+  \newcount\shoumon@bangou
+  \shoumon@bangou=0
+% セルの分割数
+  \newcount\bangouA
+  \bangouA=1
+  \newcount\@bangouB
+  \@bangouB=0
+% 箱の頂点のy座標
+  \newdimen\@choutenA
+  \newdimen\@choutenB
+  \@choutenA=0mm
+  \@choutenB=0mm
+% 大問の箱の頂点のy座標
+  \newdimen\@DchoutenA
+  \@DchoutenA=0mm
+% 箱の幅
+  \newdimen\@haba
+  \newdimen\@habaA
+% 大問と小問の距離，大問番号の幅
+  \newdimen\@SDspace% xkeyvalで定義
+  \newdimen\@Dwidth% xkeyvalで定義
+% 小問番号の幅
+  \newdimen\@Swidth% xkeyvalで定義
+  \newdimen\temp@Swidth%
+  \newdimen\tempX@Swidth%
+  \newdimen\tempY@Swidth%
+% 太さの値
+  \newdimen\@futosa
+  \newdimen\@Dfutosa% 大問の太さ
+  \newdimen\@Hfutosa% 破線の太さ
+\makeatother
+
+\makeatletter
+% 箱の高さ
+  \newdimen\@takasa% xkeyvalで定義
+  \newdimen\temp@takasa% xkeyvalで定義
+  \newdimen\tempX@takasa%
+  \newdimen\tempY@takasa%
+% ansboxesとansboxの分岐
+  \newcount\@BUNKI
+  \@BUNKI=0
+% 箱の太さ
+  \newcount\box@thickness@value% 太さの値
+  \newcount\temp@box@thickness@value% 太さの値
+  \newcount\tempX@box@thickness@value
+  \newcount\tempY@box@thickness@value
+% 箱の幅
+  \newdimen\box@scale
+  % \box@scale=1.0pt% 1倍だと飛び出ると警告
+  \newdimen\temp@box@scale
+  \newdimen\tempX@box@scale
+  \newdimen\tempY@box@scale
+% 次の箱までの間隔
+  \newdimen\@boxspace% xkeyvalで定義
+  \def\@BOXSPACE{\@boxspace plus 0.2\@boxspace minus 0.2\@boxspace}
+  \newdimen\temp@boxspace% xkeyvalで定義
+  % \newdimen\tempX@boxspace%
+  % \newdimen\tempY@boxspace%
+\makeatother
+
+% default 値
+\makeatletter
+  \@takasa=12mm
+  \box@scale=1.0\p@
+  \box@thickness@value=5
+  \box@thickness{\box@thickness@value}
+  \@boxspace=5.0mm
+  \@SDspace=0mm
+  \@Dwidth=6.0mm
+  \@Swidth=6.0mm
+\makeatother
+
+% xkeyval による定義
+\makeatletter
+  \define@key{box}{height}{\@takasa=#1}
+  \define@key{box}{scale}{\box@scale=#1\p@}
+  \setkeys{box}{scale=1.0}
+  \define@key{box}{thickness}{\box@thickness@value=#1 \box@thickness{\box@thickness@value}}
+  \define@key{box}{space}{\@boxspace=#1}
+  \define@key{box}{SDspace}{\@SDspace=#1}
+  \define@key{box}{Dwidth}{\@Dwidth=#1}
+  \define@key{box}{Swidth}{\@Swidth=#1}
+\makeatother
+
+\newcommand{\answerbox}[1]{\setkeys{box}{#1}}
+
+
+\makeatletter
+  \def\ptxt{\@ifstar{\put@textbox}{\put@text}}
+\makeatother
+
+\makeatletter
+\newcount\ptxt@BUNKI
+\ptxt@BUNKI=1
+\makeatother
+
+\makeatletter
+\newcommand{\put@text}[4][]{%
+\ifnum\ptxt@BUNKI=1
+  \draw (P#2) node[#1] {\makebox[\haba@shoumon][#3]{#4}};
+\fi%
+}
+\makeatother
+
+\makeatletter
+\newcommand{\ptxttoggle}{%
+\ifnum\ptxt@BUNKI=1
+  \ptxt@BUNKI=0
+\else
+  \ptxt@BUNKI=1
+\fi%
+}
+\makeatother
+
+\makeatletter
+\newcommand{\zeroFCOLORBOX}[1]{%
+  \newdimen\zerofb@xsep
+  \newdimen\zerofb@xrule
+  \zerofb@xsep=\fboxsep
+  \zerofb@xrule=\fboxrule
+  \fboxsep=0\p@
+  \fboxrule=4\fboxrule
+  \fcolorbox{red}{yellow}{#1}
+  \fboxsep=\zerofb@xsep
+  \fboxrule=\zerofb@xrule
+}
+\makeatother
+
+\makeatletter
+\newcommand{\put@textbox}[4][]{%
+\ifnum\ptxt@BUNKI=1
+  \draw (P#2) node[#1] {\zeroFCOLORBOX{\makebox[\haba@shoumon][#3]{#4}}};
+\fi
+}
+\makeatother
+
+% 環境の変数
+\makeatletter
+  \define@key{envbox}{height}{\@takasa=#1}
+  \define@key{envbox}{space}{\@boxspace=#1}
+  \define@key{envbox}{SDspace}{\@SDspace=#1}
+  \define@key{envbox}{Dwidth}{\@Dwidth=#1}
+  \define@key{envbox}{Swidth}{\@Swidth=#1}
+  \define@key{envbox}{daimon}{
+      \setcounter{daimon@bangou}{#1}
+      \addtocounter{daimon@bangou}{-1}
+}
+  \define@key{envbox}{shoumon}{
+      \shoumon@bangou=#1
+      \advance\shoumon@bangou by -1
+}
+  \define@key{envbox}{scale}{\box@scale=#1\box@scale}
+  \define@key{envbox}{thickness}{%
+    \box@thickness@value=#1%
+    \box@thickness{\box@thickness@value}
+  }
+\makeatother
+
+\makeatletter
+\newenvironment{ansbox}[1][%
+     scale=1.0
+]{%
+\temp@box@scale=\box@scale
+\temp@takasa=\@takasa
+\temp@Swidth=\@Swidth
+\temp@box@thickness@value=\box@thickness@value
+\box@thickness{\temp@box@thickness@value}
+\temp@boxspace=\@boxspace
+
+\setkeys{envbox}{#1}
+%
+% 箱全体の横幅
+  \@habaA=\the\columnwidth\relax
+  \@habaA=0.98\@habaA\relax% ラインオーバー警告対策
+% 大問と小問のスペースだけ短くする
+  \advance\@habaA by -\@SDspace
+  \advance\@habaA by -\@Dwidth
+%
+  \noindent
+  \begin{tikzpicture}%
+}%
+{%
+  \stepcounter{daimon@bangou};
+% 大問番号の枠
+  \draw[line width=\@Dfutosa] ({-\@Dwidth-\@SDspace},-\@DchoutenA) rectangle (-\@SDspace,-\@choutenB);
+  \draw ({-0.5*\@Dwidth-\@SDspace},{0.5*(-\@DchoutenA-\@choutenB)}) node[] {\textbf{\arabic{daimon@bangou}}};
+  \end{tikzpicture}%
+\vskip\@BOXSPACE\relax
+%
+% 値の引き継ぎ
+\@boxspace=\temp@boxspace
+\@takasa=\temp@takasa
+\@Swidth=\temp@Swidth
+\box@thickness@value=\temp@box@thickness@value
+\box@thickness{\box@thickness@value}
+
+\box@scale=\temp@box@scale
+}
+\makeatother
+
+% 大問の非表示版
+\makeatletter
+\newenvironment{ansbox*}[1][%
+     scale=1.0
+]{%
+\temp@box@scale=\box@scale
+\temp@takasa=\@takasa
+\temp@Swidth=\@Swidth
+\temp@box@thickness@value=\box@thickness@value
+\box@thickness{\temp@box@thickness@value}
+\temp@boxspace=\@boxspace
+
+\setkeys{envbox}{#1}
+% 箱全体の横幅
+  \@habaA=\the\columnwidth\relax
+  \@habaA=0.98\@habaA\relax% ラインオーバー警告対策
+  \noindent
+  \begin{tikzpicture}%
+}%
+{%
+  \end{tikzpicture}%
+  \vskip\@BOXSPACE\relax
+%
+% 値の引き継ぎ
+\@boxspace=\temp@boxspace
+\@takasa=\temp@takasa
+\@Swidth=\temp@Swidth
+\box@thickness@value=\temp@box@thickness@value
+\box@thickness{\box@thickness@value}
+\box@scale=\temp@box@scale
+}
+\makeatother
+
+\makeatletter
+  \def\pbox{\@ifstar{\@putboxstar}{\@putbox}}
+  \def\@putboxstar{\@ifnextchar[{\@funcX}{\@funcY}}
+  \def\@funcX[#1]#2{\@ifnextchar[{\@funcW[#1]#2}{\@PUTBOXESstar{#2}{#1}}}% (2021/08/29)
+  \def\@funcW[#1]#2[#3]{\@PUTBOXESstar[#3]{#2}{#1}}% (2021/08/29)
+  \def\@funcY#1{\@ifnextchar[{\@funcZ#1}{\@PUTBOXstar{#1}}}
+  \def\@funcZ#1[#2]{\@PUTBOXstar[#2]{#1}}
+  \def\@putbox{\@ifnextchar[{\@funcA}{\@funcB}}
+  \def\@funcA[#1]#2{\@ifnextchar[{\@funcD[#1]#2}{\@PUTBOXES{#2}{#1}}}% (2021/08/29)
+  \def\@funcD[#1]#2[#3]{\@PUTBOXES[#3]{#2}{#1}}% (2021/08/29)
+  \def\@funcB#1{\@ifnextchar[{\@funcC#1}{\@PUTBOX{#1}}}
+  \def\@funcC#1[#2]{\@PUTBOX[#2]{#1}}% (2021/08/29)
+\makeatother
+
+% putboxesの引数
+\makeatletter
+  \define@key{putboxes}{height}{\@takasa=#1}
+  \define@key{putboxes}{thickness}{\temp@box@thickness@value=#1 \box@thickness{#1}}
+  \define@key{putboxes}{shoumon}{
+      \shoumon@bangou=#1
+      \advance\shoumon@bangou by -1
+}
+  \define@key{putboxes}{scale}{\tempX@box@scale=#1\temp@box@scale}
+  \define@key{putboxes}{Swidth}{\@Swidth=#1}
+\makeatother
+
+\makeatletter
+\newcommand{\@PUTBOXES}[3][%
+    scale=1.0
+]{%
+\@cotA=0
+\@cotB=0
+\@cotC=0
+\@cotD=0
+\@dimX=0\p@
+\@BUNKI=1
+
+% 値の引き継ぎ
+\tempX@box@scale=\temp@box@scale
+\tempX@takasa=\@takasa
+\tempX@Swidth=\@Swidth
+\tempX@box@thickness@value=\box@thickness@value
+\box@thickness{\tempX@box@thickness@value}
+
+\setkeys{putboxes}{#1}
+
+  \@cotA=#2;% 問題数   A=6
+  \@cotB=#3;% 行の個数 B=3
+% 2行以上箱があるとき
+  \ifnum\@cotA>\@cotB;%
+    \@cotC=\@cotA;% C=3
+    \@cotD=\@cotB;% E=6
+    \divide\@cotC by \@cotB;% C=2
+    \multiply\@cotD by \@cotC;% E=3×2=6
+    \advance\@cotA by -\@cotD;% A=6-6=0 余りの数
+    \newcount\@foo;
+    \@foo=\@cotC;% C=2 繰返す回数
+    \loop;
+      \@putbox{\@cotB}[scale=\strippt\tempX@box@scale]
+      \advance\@foo -1;%
+    \ifnum\@foo>0;% 0から変更
+    \repeat;
+  \fi;
+% 1行以下箱があるとき
+  \ifnum\@cotA>0;
+    \@dimX=\tempX@box@scale;%
+    \multiply\@dimX by \@cotA;% X=2÷3の小数
+    \divide\@dimX by \@cotB;%
+    \@putbox{\@cotA}[scale=\strippt\@dimX]%
+  \fi;
+%
+% 値の引き継ぎ
+  \@takasa=\tempX@takasa
+  \@Swidth=\tempX@Swidth
+  \box@thickness@value=\tempX@box@thickness@value
+  \box@thickness{\box@thickness@value}
+  \@BUNKI=0
+}
+\makeatother
+
+
+\makeatletter
+\newcommand{\@PUTBOXESstar}[3][%
+    scale=1.0
+]{%
+\@cotA=0
+\@cotB=0
+\@cotC=0
+\@cotD=0
+\@dimX=0\p@
+\@BUNKI=1
+
+% 値の引き継ぎ
+\tempX@box@scale=\temp@box@scale
+\tempX@takasa=\@takasa
+\tempX@box@thickness@value=\box@thickness@value
+\box@thickness{\tempX@box@thickness@value}
+
+\setkeys{putboxes}{#1}
+  \@cotA=#2;
+  \@cotB=#3;
+% 2行以上箱があるとき
+  \ifnum\@cotA>\@cotB;%
+    \@cotC=\@cotA;%
+    \@cotD=\@cotB;%
+    \divide\@cotC by \@cotB;%
+    \multiply\@cotD by \@cotC;%
+    \advance\@cotA by -\@cotD;%
+  %
+    \newcount\@foo;
+    \@foo=\@cotC;%
+    \loop;
+      \@putboxstar{\@cotB}[scale=\strippt\tempX@box@scale]%
+      \advance\@foo -1;
+    \ifnum\@foo>0;
+    \repeat;
+  \fi;
+%
+% 1行以下箱があるとき
+  \ifnum\@cotA>0;
+    \@dimX=\tempX@box@scale;% 幅率の変更(2021/05/09)
+    \multiply\@dimX by \@cotA;%
+    \divide\@dimX by \@cotB;%
+    \@putboxstar{\@cotA}[scale=\strippt\@dimX]% (2021/08/29)
+  \fi;
+%
+% 値の引き継ぎ
+  \@takasa=\tempX@takasa
+  \box@thickness@value=\tempX@box@thickness@value
+  \box@thickness{\box@thickness@value}
+  \@BUNKI=0
+}
+\makeatother
+
+\makeatletter
+  \define@key{putbox}{height}{\@takasa=#1}
+  \define@key{putbox}{thickness}{\temp@box@thickness@value=#1 \box@thickness{#1}}
+  \define@key{putbox}{shoumon}{
+      \shoumon@bangou=#1
+      \advance\shoumon@bangou by -1
+}
+  \define@key{putbox}{scale}{\tempY@box@scale=#1\box@scale}
+  \define@key{putbox}{Swidth}{\@Swidth=#1}
+\makeatother
+
+\makeatletter
+\newcommand{\@PUTBOX}[2][%
+    scale=1.0
+]{%
+\@cotX=0
+\@cotY=0
+\@dimA=0\p@
+\@dimB=0\p@
+\haba@shoumon=0\p@
+% 値の引き継ぎ
+\ifnum\@BUNKI=0;
+  \tempY@takasa=\@takasa
+  \tempY@Swidth=\@Swidth
+  \tempY@box@thickness@value=\box@thickness@value
+  \box@thickness{\tempY@box@thickness@value}
+\fi;
+\tempY@box@scale=\box@scale%
+
+\setkeys{putbox}{#1}
+  \bangouA=#2;
+  \advance\@bangouB by \bangouA;
+  \@cotX=\bangouA;
+  \advance\@cotX by -1;
+% 箱の右下の高さ
+  \advance\@choutenB by \@takasa;
+% 箱の幅
+  \@haba=\strippt\tempY@box@scale\@habaA;
+% 全体の箱
+  \draw[line width=\@futosa] (0,-\@choutenA) rectangle (\@haba,-\@choutenB);
+
+\@dimB=\@Swidth;
+\@dimA=\@haba;%
+
+\ifnum\@cotX=0;
+  \advance \@dimA by -\@dimB;% 小問番号の幅だけ引く
+\else
+  \multiply \@dimB by \bangouA;% 小問番号の幅の和
+  \advance \@dimA by -\@dimB;% 小問番号の幅だけ引く
+  \divide \@dimA by \bangouA;% 小問の数だけ割る
+\fi
+\haba@shoumon=0.98\@dimA% ちょっと狭める
+
+\ifnum\@cotX=0;
+  \draw[line width=\@Hfutosa,densely dotted] (\@Swidth,-\@choutenA)--(\@Swidth,-\@choutenB);% 右側
+\else
+\foreach ~ in{1,...,\@cotX}{%
+  \draw[line width=\@futosa] (\@haba/\bangouA*~,-\@choutenA)--(\@haba/\bangouA*~,-\@choutenB);% 左側
+}
+\foreach ~ in{0,1,...,\@cotX}{%
+  \draw[line width=\@Hfutosa,densely dotted] (\@haba/\bangouA*~+\@Swidth,-\@choutenA)--(\@haba/\bangouA*~+\@Swidth,-\@choutenB);% 右側
+}
+\fi
+
+\foreach ~ in{1,...,\bangouA}{%
+  \@cotY=\shoumon@bangou;%
+  \advance\@cotY by ~;% 小問番号の引継
+  \coordinate (NO\the\@cotY) at ({\@haba/\bangouA*(~ - 1) +\@Swidth/2},-0.5*\@choutenA-0.5*\@choutenB);
+% 解答欄の真ん中の場所
+  \coordinate (P\the\@cotY) at ({\@haba/\bangouA*(~ - 1) +\@Swidth +0.5*(\@haba/\bangouA-\@Swidth)},-0.5*\@choutenA-0.5*\@choutenB);
+}
+% 小問番号の記述
+\foreach ~ in{1,...,\bangouA}{%
+  \@cotY=\shoumon@bangou;%
+  \advance\@cotY by ~;
+  \draw (NO\the\@cotY) node[] {\@shoumon@kigou{\@cotY}};
+}
+% 次の箱の左上の高さ
+\advance\@choutenA by \@takasa;
+% 次の行へ番号の引き継ぎ
+\advance\shoumon@bangou by \bangouA;
+\advance\@bangouB by \bangouA;
+
+% 値の引き継ぎ
+\ifnum\@BUNKI=0;
+  \@takasa=\tempY@takasa
+  \@Swidth=\tempY@Swidth
+  \box@thickness@value=\tempY@box@thickness@value
+  \box@thickness{\box@thickness@value}
+\fi
+}
+\makeatother
+
+\makeatletter
+\newcommand{\@PUTBOXstar}[2][%
+    scale=1.0
+]{%
+\@cotX=0
+\@cotY=0
+\@dimA=0\p@
+\haba@shoumon=0\p@
+
+% 値の引き継ぎ
+\ifnum\@BUNKI=0;
+  \tempY@takasa=\@takasa
+  \tempY@box@thickness@value=\box@thickness@value
+  \box@thickness{\tempY@box@thickness@value}
+\fi;
+
+\tempY@box@scale=\box@scale%
+\setkeys{putbox}{#1}%
+
+  \bangouA=#2;
+  \advance\@bangouB by \bangouA;
+  \@cotX=\bangouA;
+  \advance\@cotX by -1;
+% 箱の右下の高さ
+  \advance\@choutenB by \@takasa;
+% 箱の幅
+  \@haba=\strippt\tempY@box@scale\@habaA;%
+% 全体の箱 (左上の座標 rectangle 右下の座標)
+  \draw[line width=\@futosa] (0,-\@choutenA) rectangle (\@haba,-\@choutenB);
+
+\@dimA=\@haba;%
+\ifnum\@cotX=0;
+  \advance \@dimA by -0\p@;% 小問番号の幅だけ引く
+\else
+  \divide \@dimA by \bangouA;% 小問の数だけ割る
+\fi
+
+\haba@shoumon=0.98\@dimA%
+% 小問番号の箱の右
+\ifnum\@cotX=0;
+\else
+\foreach ~ in{1,...,\@cotX}{%
+  \draw[line width=\@futosa] (\@haba/\bangouA*~,-\@choutenA)--(\@haba/\bangouA*~,-\@choutenB);% 左側
+}
+\fi
+% 小問番号の場所を決定（点をとる）
+\foreach ~ in{1,...,\bangouA}{%
+  \@cotY=\shoumon@bangou;%
+  \advance\@cotY by ~;% 小問番号の引継
+%
+  \coordinate (NO\the\@cotY) at ({\@haba/\bangouA*(~ - 1) +\@Swidth/2},-0.5*\@choutenA-0.5*\@choutenB);%
+% 解答欄の真ん中の場所
+  \coordinate (P\the\@cotY) at ({\@haba/\bangouA*(~ - 1) +0.5*\@haba/\bangouA},-0.5*\@choutenA-0.5*\@choutenB);
+}
+% 小問番号の記述
+% 次の箱の左上の高さ
+\advance\@choutenA by \@takasa;
+% 次の行へ番号の引継
+\advance\shoumon@bangou by \bangouA;
+\advance\@bangouB by \bangouA;
+% 値の引き継ぎ
+\ifnum\@BUNKI=0;
+  \@takasa=\tempY@takasa
+  \box@thickness@value=\tempY@box@thickness@value
+  \box@thickness{\box@thickness@value}
+\fi
+}
+\makeatother
+%---------- all done
+\endinput

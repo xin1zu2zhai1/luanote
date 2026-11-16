@@ -168,6 +168,31 @@ jlreq は「日本語組版処理の要件」（JLREQ）に基づく文書クラ
     },
   },
   {
+    id: 'ja-kanbun',
+    label: '漢文訓読（kanbun・縦書き）',
+    mainFile: 'main.tex',
+    files: {
+      'main.tex': String.raw`\documentclass{ltjtarticle}
+\usepackage[haranoaji]{luatexja-preset}
+
+% kanbun パッケージ（https://ctan.org/pkg/kanbun）
+% 返り点は [レ] [一] [二]、送り仮名はカタカナ、振り仮名は 漢字(かな) で書く
+\newlength\myzw
+\setlength\myzw{2.25\zw}
+\usepackage[kumi=beta, unit=\myzw, yokoaki=3.5]{kanbun}
+
+\Kanbun
+學ビテ而時ニ習フ[レ]之ヲ，不[二]亦タ說バシカラ[一]乎。有リ[レ]朋自リ[二]遠方[一]來タル，不[二]亦タ樂シカラ[一]乎。
+\EndKanbun
+
+\begin{document}
+\section{論語}
+\printkanbun
+\end{document}
+`,
+    },
+  },
+  {
     id: 'beamer',
     label: 'Beamer スライド',
     mainFile: 'main.tex',

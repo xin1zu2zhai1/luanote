@@ -40,6 +40,22 @@ const SOURCES = [
     dirs: ['.'],
   },
   {
+    // TeX Live の WASM ビルドに無いのでリポジトリに同梱（vendor/kanbun/SOURCE.md 参照）
+    name: 'kanbun',
+    local: 'vendor/kanbun',
+    ref: 'v1.3',
+    dirs: ['.'],
+    only: /^kanbun\.(sty|lua)$/,
+  },
+  {
+    // ユーザー提供の解答欄パッケージ（vendor/answerbox/SOURCE.md 参照）
+    name: 'answerbox',
+    local: 'vendor/answerbox',
+    ref: 'local',
+    dirs: ['.'],
+    only: /\.sty$/,
+  },
+  {
     // luatexja が参照する Adobe-Japan1 の CMap（TeX Live の adobemapping 相当）
     name: 'cmap-resources',
     repo: 'https://github.com/adobe-type-tools/cmap-resources',
@@ -95,8 +111,8 @@ for (const f of Object.values(FMT)) mkdirSync(join(outDir, String(f)), { recursi
 const manifest = { sources: JSON.parse(STAMP), files: {} };
 
 for (const src of SOURCES) {
-  const dest = join(cacheDir, `${src.name}-${src.ref}`);
-  if (!existsSync(dest)) {
+  const dest = src.local ? join(root, src.local) : join(cacheDir, `${src.name}-${src.ref}`);
+  if (!src.local && !existsSync(dest)) {
     console.log(`Cloning ${src.repo} @ ${src.ref}`);
     if (/^[0-9a-f]{40}$/.test(src.ref)) {
       mkdirSync(dest, { recursive: true });

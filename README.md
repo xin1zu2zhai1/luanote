@@ -10,7 +10,7 @@ TeX Live 2026 を WebAssembly 化した [BusyTeX](https://github.com/busytex/bus
 
 - **3 ペイン表示**: ファイルツリー / ソース（CodeMirror 6）/ PDF プレビュー（pdf.js）。ペイン幅はドラッグで調整可能。スマホではタブ切り替え。
 - **LuaLaTeX（LuaHBTeX 1.24）でレンダリング**: `fontspec`・`unicode-math`・`\directlua` などが使えます。
-- **日本語組版**: LuaTeX-ja（`ltjsarticle` など）・原ノ味フォント・`jlreq`（横書き / 縦書き）を同梱。必要なファイルだけを初回使用時に読み込みます。
+- **日本語組版**: LuaTeX-ja（`ltjsarticle` など）・原ノ味フォント・`jlreq`（横書き / 縦書き）・`kanbun`（漢文訓読）を同梱。必要なファイルだけを初回使用時に読み込みます。
 - **TeX Live のバージョン・パッケージセットを選択**: 既定は TeX Live 2026。`basic` / `recommended` / `extra` から選べます（`src/distributions.ts` に追加すれば他のバージョンも選択肢になります）。
 - **高速コンパイル**: 通常は 1 パス。`.aux` / `.toc` / `.bbl` などを次回に引き継ぎ、必要なときだけ自動で再実行します。
   「完全ビルド」では BibTeX / Biber / makeindex を含めて複数パス実行します。
@@ -36,6 +36,8 @@ TeX Live 2026 を WebAssembly 化した [BusyTeX](https://github.com/busytex/bus
   2 回目以降はブラウザのキャッシュ（IndexedDB）から読み込みます。
 - 日本語組版用の追加パッケージ（`public/core/texmf-extra/`）は TeX Live 2026 の時期に合わせたバージョンに固定しています：
   LuaTeX-ja 20260130.1、原ノ味フォント 20250811、jlreq（2026-02-26 のコミット）、Adobe-Japan1 CMap。
+  TeX Live の WASM ビルドに入っていない `kanbun` v1.3 は `vendor/kanbun/` に、
+  解答欄パッケージ `answerbox` / `answerboxHK` は `vendor/answerbox/` にリポジトリ内保存しています（`\usepackage{answerbox}` などで使用可）。
   TeX Live に無いファイルはエンジンがこのディレクトリから必要な分だけ取得します（`scripts/fetch-extras.mjs`）。
 - 自作の `.sty` / `.cls` / フォントはプロジェクトにアップロードすればそのまま使えます（例: `\usepackage{mystyle}`、サブフォルダなら `\usepackage{sty/mystyle}`）。
 - `--shell-escape` を必要とするパッケージ（`minted` など）や、外部ツールが必要な変換（EPS/SVG → PDF）は使えません。
@@ -83,4 +85,4 @@ scripts/fetch-extras.mjs  luatexja・原ノ味フォント・jlreq の取得（�
 TeX エンジン部分は [texlyre-busytex](https://github.com/TeXlyre/texlyre-busytex)（AGPL-3.0）、
 その元となる [BusyTeX](https://github.com/busytex/busytex)（MIT）、および TeX Live の各パッケージのライセンスに従います。
 同梱する日本語関連ファイルはそれぞれのライセンスに従います：LuaTeX-ja（BSD）、原ノ味フォント（SIL Open Font License 1.1）、
-jlreq（BSD 2-Clause）、Adobe CMap / マッピングリソース（BSD 3-Clause）。
+jlreq（BSD 2-Clause）、kanbun（LPPL 1.3c）、Adobe CMap / マッピングリソース（BSD 3-Clause）。
