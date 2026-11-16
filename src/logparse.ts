@@ -28,6 +28,12 @@ function normalize(path: string): string {
   return p;
 }
 
+/** システム側ファイルの表示名（リモート取得ファイルの "26_" 接頭辞は除く） */
+function systemName(path: string): string {
+  const base = path.split('/').pop() ?? path;
+  return `${base.replace(/^\d+_/, '')}（システム）`;
+}
+
 // WASM 環境では意味のない / 冗長なメッセージ
 const NOISE = [
   /^==> Fatal error occurred/,
@@ -118,7 +124,8 @@ export function parseLog(log: string, mainFile: string): LogIssue[] {
         if (m) {
           const p = m[2];
           const isProject = !p.startsWith('/');
-          stack.push(isProject ? normalize(p) : null);
+          // TeX Live / 追加パッケージ側のファイルは名前だけ記録する（クリックしてもジャンプしない）
+          stack.push(isProject ? normalize(p) : systemName(p));
           k += m[0].length - 1;
         } else {
           stack.push(null);

@@ -30,7 +30,7 @@ export const DISTRIBUTIONS: Distribution[] = [
       {
         id: 'basic',
         label: 'basic',
-        description: 'LaTeX 基本 + LuaTeX（fontspec などは含まない）',
+        description: 'LaTeX 基本 + LuaTeX（fontspec・TikZ・xcolor などは含まない。日本語・kanbun・answerbox は使えない）',
         sizeMB: 93,
       },
       {
