@@ -26,13 +26,8 @@ export const DISTRIBUTIONS: Distribution[] = [
     year: 2026,
     assetDir: 'core/texlive-2026',
     defaultPackageSet: 'recommended',
+    // basic は日本語組版（luatexja が xkeyval を要求）に使えないため提供しない
     packageSets: [
-      {
-        id: 'basic',
-        label: 'basic',
-        description: 'LaTeX 基本 + LuaTeX（fontspec・TikZ・xcolor などは含まない。日本語・kanbun・answerbox は使えない）',
-        sizeMB: 93,
-      },
       {
         id: 'recommended',
         label: 'recommended',

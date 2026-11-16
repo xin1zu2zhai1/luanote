@@ -1,7 +1,7 @@
 // TeX Live (BusyTeX WASM) のアセットを GitHub Releases から取得して public/core/<id>/ に展開する
 //   node scripts/fetch-assets.mjs            # 既にあればスキップ
 //   node scripts/fetch-assets.mjs --force    # 再取得
-import { createWriteStream, existsSync, mkdirSync, readFileSync, renameSync, rmSync } from 'node:fs';
+import { createWriteStream, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import { execFileSync } from 'node:child_process';
@@ -20,6 +20,8 @@ const DISTS = [
     url: `https://github.com/TeXlyre/texlyre-busytex/releases/download/assets-v${pkgVersion}/busytex-assets.tar.gz`,
     archive: `texlyre-busytex-assets-v${pkgVersion}.tar.gz`,
     innerDir: 'busytex',
+    // basic は日本語組版に使えないので配信しない
+    exclude: /^texlive-basic\./,
   },
 ];
 
@@ -59,5 +61,9 @@ for (const d of DISTS) {
   rmSync(target, { recursive: true, force: true });
   renameSync(join(tmp, d.innerDir), target);
   rmSync(tmp, { recursive: true, force: true });
+  // 提供しないパッケージセット（src/distributions.ts 参照）は公開サイトに含めない
+  for (const name of readdirSync(target)) {
+    if (d.exclude?.test(name)) rmSync(join(target, name));
+  }
   console.log(`✓ ${d.id} → public/core/${d.id}`);
 }
