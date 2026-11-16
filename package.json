@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "fetch-assets": "node scripts/fetch-assets.mjs",
+    "fetch-assets": "node scripts/fetch-assets.mjs && node scripts/fetch-extras.mjs",
     "typecheck": "tsc"
   },
   "repository": {

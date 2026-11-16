@@ -95,6 +95,79 @@ Hello, LuaLaTeX!
     },
   },
   {
+    id: 'ja-ltjs',
+    label: '日本語（ltjsarticle・横書き）',
+    mainFile: 'main.tex',
+    files: {
+      'main.tex': String.raw`\documentclass[a4paper,11pt]{ltjsarticle}
+\usepackage[haranoaji]{luatexja-preset} % 原ノ味フォント
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\title{LuaLaTeX による日本語文書}
+\author{著者名}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{はじめに}
+これは LuaTeX-ja を使った日本語文書の例です。
+禁則処理や和欧文間のスペース（LuaLaTeX など）は自動で調整されます。
+\textbf{太字}は{\gtfamily ゴシック体}になります。
+
+\section{数式}
+数式もそのまま書けます。
+\begin{equation}
+  e^{i\pi} + 1 = 0
+\end{equation}
+
+\end{document}
+`,
+    },
+  },
+  {
+    id: 'ja-jlreq',
+    label: '日本語（jlreq・横書き）',
+    mainFile: 'main.tex',
+    files: {
+      'main.tex': String.raw`\documentclass[paper=a4paper,fontsize=11pt]{jlreq}
+\usepackage[haranoaji]{luatexja-preset}
+
+\title{jlreq による日本語文書}
+\author{著者名}
+
+\begin{document}
+\maketitle
+
+\section{概要}
+jlreq は「日本語組版処理の要件」（JLREQ）に基づく文書クラスです。
+見出しや段落の体裁が日本語の慣習に沿って組まれます。
+
+\end{document}
+`,
+    },
+  },
+  {
+    id: 'ja-tate',
+    label: '日本語（jlreq・縦書き）',
+    mainFile: 'main.tex',
+    files: {
+      'main.tex': String.raw`\documentclass[tate,paper=a5paper,fontsize=10pt]{jlreq}
+\usepackage[haranoaji]{luatexja-preset}
+
+\begin{document}
+\section{縦書きの例}
+吾輩は猫である。名前はまだ無い。
+どこで生れたかとんと見当がつかぬ。何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。
+
+数字は\tatechuyoko{12}月\tatechuyoko{25}日のように縦中横にできます。
+\end{document}
+`,
+    },
+  },
+  {
     id: 'beamer',
     label: 'Beamer スライド',
     mainFile: 'main.tex',

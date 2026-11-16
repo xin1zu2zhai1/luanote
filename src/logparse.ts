@@ -29,7 +29,11 @@ function normalize(path: string): string {
 }
 
 // WASM 環境では意味のない / 冗長なメッセージ
-const NOISE = [/^==> Fatal error occurred/, /epstopdf Warning: Shell escape feature is not enabled/];
+const NOISE = [
+  /^==> Fatal error occurred/,
+  /epstopdf Warning: Shell escape feature is not enabled/,
+  /luatexja-preset Warning: Japanese fonts will be scaled by/,
+];
 
 export function parseLog(log: string, mainFile: string): LogIssue[] {
   const lines = unwrap(log);

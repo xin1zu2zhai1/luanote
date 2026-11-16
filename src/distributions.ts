@@ -58,3 +58,12 @@ export function findDistribution(id: string): Distribution {
 export function assetBase(d: Distribution): string {
   return new URL(import.meta.env.BASE_URL + d.assetDir, location.href).href.replace(/\/$/, '');
 }
+
+/**
+ * TeX Live に含まれないファイル（luatexja・原ノ味フォント・jlreq）の配信先。
+ * エンジンは見つからないファイルを <endpoint>/<kpse format>/<name> から遅延取得する。
+ * scripts/fetch-extras.mjs が生成する。
+ */
+export function extrasEndpoint(): string {
+  return new URL(import.meta.env.BASE_URL + 'core/texmf-extra', location.href).href;
+}

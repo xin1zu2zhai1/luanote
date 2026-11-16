@@ -1,7 +1,7 @@
 // BusyTeX (TeX Live WASM) を使った LuaLaTeX コンパイラのラッパー
 import { BusyTexRunner } from 'texlyre-busytex';
 import type { CompileResult, FileInput } from 'texlyre-busytex';
-import { assetBase, findDistribution } from './distributions';
+import { assetBase, extrasEndpoint, findDistribution } from './distributions';
 import type { BibMode } from './store';
 
 export interface CompileRequest {
@@ -47,6 +47,8 @@ export class LuaLatexCompiler {
   private initPromise: Promise<void> | null = null;
   private auxCache = new Map<string, Uint8Array>(); // path -> content
   private auxCacheKey = '';
+  /** 補助ファイルキャッシュ作成後に完全ビルドを実行済みか（.bbl が出ない文書で毎回完全ビルドしないため） */
+  private fullBuilt = false;
   private queue: Promise<unknown> = Promise.resolve();
   onStatus: (s: EngineStatus) => void = () => {};
 
@@ -67,6 +69,7 @@ export class LuaLatexCompiler {
     const label = `${dist.label} (${pkg.label})`;
     this.runnerKey = key;
     this.auxCache.clear();
+    this.fullBuilt = false;
     const runner = new BusyTexRunner({
       busytexBasePath: base,
       preloadDataPackages: [`${base}/texlive-${pkg.id}.js`],
@@ -101,6 +104,7 @@ export class LuaLatexCompiler {
   resetAux(key = ''): void {
     this.auxCache.clear();
     this.auxCacheKey = key;
+    this.fullBuilt = false;
   }
 
   compile(req: CompileRequest, cacheKey: string): Promise<CompileOutput> {
@@ -131,7 +135,7 @@ export class LuaLatexCompiler {
 
     // .bib があるのに .bbl がまだ無い場合は自動的に完全ビルド
     const hasBbl = [...this.auxCache.keys()].some((p) => p.endsWith('.bbl'));
-    const full = req.full || (hasBib && req.bib !== 'none' && !hasBbl);
+    const full = req.full || (hasBib && req.bib !== 'none' && !hasBbl && !this.fullBuilt);
 
     let passes = 0;
     let result: CompileResult;
@@ -156,7 +160,7 @@ export class LuaLatexCompiler {
         'silent',
         'luahbtex_bibtex8',
         null,
-        undefined,
+        extrasEndpoint(),
         false,
         [],
       );
@@ -176,6 +180,7 @@ export class LuaLatexCompiler {
         /* 読めなくても致命的ではない */
       }
 
+      if (full && result.success) this.fullBuilt = true;
       const texLog = lastTexLog(result);
       const needsRerun = RERUN_PATTERNS.some((p) => texLog.includes(p));
       if (!result.success || full || !needsRerun || attempt >= MAX_AUTO_RERUN) break;

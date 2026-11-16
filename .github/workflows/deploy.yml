@@ -31,9 +31,9 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: .asset-cache
-          key: busytex-assets-${{ hashFiles('package-lock.json') }}
+          key: busytex-assets-${{ hashFiles('package-lock.json', 'scripts/fetch-*.mjs') }}
 
-      - name: Fetch TeX Live WASM assets
+      - name: Fetch TeX Live WASM assets and extra packages (luatexja, HaranoAji, jlreq)
         run: npm run fetch-assets
 
       - name: Build
