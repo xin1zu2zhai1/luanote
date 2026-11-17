@@ -137,6 +137,11 @@ export class LuaLatexCompiler {
     const hasBbl = [...this.auxCache.keys()].some((p) => p.endsWith('.bbl'));
     const full = req.full || (hasBib && req.bib !== 'none' && !hasBbl && !this.fullBuilt);
 
+    // Overleaf と同様、メインファイルがサブフォルダにあってもプロジェクト直下を基準にコンパイルする。
+    // エンジンはメインファイルのフォルダで実行されるため、直下に起動用ファイルを置いて \input する。
+    // \input@path にメインファイルのフォルダも加え、同じフォルダからの相対参照も解決できるようにする。
+    const entry = rootEntry(req.mainFile, userPaths);
+
     let passes = 0;
     let result: CompileResult;
     const logs: string[] = [];
@@ -147,12 +152,15 @@ export class LuaLatexCompiler {
       }
       const mainFile = files.find((f) => f.path === req.mainFile);
       if (!mainFile) throw new Error(`メインファイル ${req.mainFile} が見つかりません`);
-      const others = files.filter((f) => f !== mainFile);
+      const others = entry ? files : files.filter((f) => f !== mainFile);
+      const head: FileInput = entry
+        ? { path: entry.path, content: entry.content }
+        : { path: req.mainFile, content: mainFile.content };
 
       const b = full ? bibOpts() : { bibtex: false, biber: false };
       result = await runner.compile(
-        [{ path: req.mainFile, content: mainFile.content }, ...others],
-        req.mainFile,
+        [head, ...others],
+        head.path,
         b.bibtex,
         b.biber,
         full ? null : false,
@@ -196,6 +204,21 @@ export class LuaLatexCompiler {
       ms: performance.now() - t0,
     };
   }
+}
+
+/** メインファイルがサブフォルダにあるとき、プロジェクト直下に置く起動用ファイルを作る */
+function rootEntry(mainFile: string, userPaths: Set<string>): { path: string; content: string } | null {
+  const slash = mainFile.lastIndexOf('/');
+  if (slash < 0) return null;
+  const dir = mainFile.slice(0, slash + 1);
+  const base = mainFile.slice(slash + 1);
+  // 出力ファイル名（\jobname）をメインファイルと同じにする。直下に同名ファイルがあれば別名にする
+  let path = base;
+  for (let i = 1; userPaths.has(path); i++) path = `luanote-entry${i}-${base}`;
+  const content =
+    `\\expandafter\\gdef\\csname input@path\\endcsname{{${dir}}}%\n` +
+    `\\input{${mainFile}}\n`;
+  return { path, content };
 }
 
 function lastTexLog(r: CompileResult): string {

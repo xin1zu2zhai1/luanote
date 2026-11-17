@@ -8,14 +8,29 @@ export interface LogIssue {
   context?: string;
 }
 
-/** 79 桁で折り返された行を可能な範囲で連結する */
+const encoder = new TextEncoder();
+
+/**
+ * TeX は max_print_line = 79「バイト」で折り返す。LuaTeX は UTF-8 の文字を途中で切らず、
+ * 多バイト文字の前では早めに折り返すため、日本語を含む行は 76〜78 バイトで折り返されることがある
+ * （実ログで確認）。
+ */
+function isWrapped(segment: string): boolean {
+  const bytes = encoder.encode(segment).length;
+  if (bytes === 79) return true;
+  return bytes >= 76 && bytes < 79 && /[^\x00-\x7f]/.test(segment);
+}
+
+/** 折り返された行を可能な範囲で連結する */
 function unwrap(log: string): string[] {
   const raw = log.split(/\r?\n/);
   const out: string[] = [];
   for (let i = 0; i < raw.length; i++) {
-    let l = raw[i];
-    while (l.length === 79 && i + 1 < raw.length) {
-      l += raw[++i];
+    let seg = raw[i];
+    let l = seg;
+    while (isWrapped(seg) && i + 1 < raw.length) {
+      seg = raw[++i];
+      l += seg;
     }
     out.push(l);
   }
