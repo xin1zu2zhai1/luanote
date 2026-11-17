@@ -42,7 +42,9 @@ let synctex: SyncTex | null = null;
 let lastIssues: LogIssue[] = [];
 let dirty = false;
 let compiling = false;
-let pendingCompile: { full: boolean } | null = null;
+let pendingCompile: { full: boolean; target?: string } | null = null;
+/** 表示中の PDF の元になった .tex（ダウンロード名に使う） */
+let lastPdfSource: string | null = null;
 let autoTimer: number | undefined;
 const saveTimers = new Map<string, number>();
 
@@ -59,6 +61,7 @@ const editor = new SourceEditor($('#editor-host'), {
     scheduleAutoCompile();
   },
   onCompile: (full) => void compile(full),
+  onCompileEditing: () => compileEditingFile(),
   onForwardSync: () => forwardSync(),
 });
 
@@ -146,9 +149,11 @@ async function loadProject(id: string): Promise<void> {
   // 前回の PDF を表示
   pdfView.clear();
   lastPdf = null;
+  lastPdfSource = null;
   const cached = await getMeta<Uint8Array>(`pdf:${id}`);
   if (cached) {
     lastPdf = cached;
+    lastPdfSource = (await getMeta<string>(`pdfsource:${id}`)) ?? null;
     await pdfView.load(cached);
     ($('#download-pdf') as HTMLButtonElement).disabled = false;
   } else {
@@ -463,16 +468,43 @@ function scheduleAutoCompile(): void {
   autoTimer = window.setTimeout(() => void compile(false), 1200);
 }
 
-async function compile(full: boolean): Promise<void> {
+/**
+ * 編集中のファイルが単独でコンパイルできる文書（\documentclass を含む .tex）ならそのパスを返す。
+ * 章ファイルや .sty などは null。
+ */
+function standaloneEditingFile(): string | null {
+  const path = editor.path;
+  if (!path || !path.toLowerCase().endsWith('.tex')) return null;
+  const e = files.get(path);
+  if (!e || typeof e.content !== 'string') return null;
+  // コメント行を除いて \documentclass を探す
+  return /^[^%\n]*\\documentclass\b/m.test(e.content) ? path : null;
+}
+
+/** 編集中のファイルをコンパイルする（メインファイルの設定は変えない） */
+function compileEditingFile(full = false): void {
+  const target = standaloneEditingFile();
+  if (!target) {
+    toast('編集中のファイルは単独でコンパイルできません（\\documentclass を含む .tex を開いてください）');
+    return;
+  }
+  void compile(full, target);
+}
+
+/**
+ * @param target コンパイルするファイル。省略時はメインファイル。
+ */
+async function compile(full: boolean, target?: string): Promise<void> {
   if (!project) return;
   clearTimeout(autoTimer);
   if (compiling) {
-    pendingCompile = { full: full || !!pendingCompile?.full };
+    pendingCompile = { full: full || !!pendingCompile?.full, target: target ?? pendingCompile?.target };
     return;
   }
   const s = project.settings;
-  if (!files.has(s.mainFile) || !s.mainFile.endsWith('.tex')) {
-    toast(`メインファイル（.tex）が見つかりません: ${s.mainFile}`);
+  const entry = target ?? s.mainFile;
+  if (!files.has(entry) || !entry.endsWith('.tex')) {
+    toast(target ? `${entry} が見つかりません` : `メインファイル（.tex）が見つかりません: ${entry}`);
     return;
   }
   compiling = true;
@@ -487,7 +519,7 @@ async function compile(full: boolean): Promise<void> {
     out = await compiler.compile(
       {
         files: input,
-        mainFile: s.mainFile,
+        mainFile: entry,
         distribution: s.distribution,
         packageSet: s.packageSet,
         bib: s.bib,
@@ -506,18 +538,18 @@ async function compile(full: boolean): Promise<void> {
     compiling = false;
     setCompileUi(false);
   }
-  if (out && project?.id === projectId) await handleResult(out);
+  if (out && project?.id === projectId) await handleResult(out, entry);
   if (pendingCompile) {
     const p = pendingCompile;
     pendingCompile = null;
-    void compile(p.full);
+    void compile(p.full, p.target);
   }
 }
 
-async function handleResult(out: CompileOutput): Promise<void> {
+async function handleResult(out: CompileOutput, entry: string): Promise<void> {
   if (!project) return;
   $('#log-raw').textContent = out.log;
-  lastIssues = parseLog(out.texLog, project.settings.mainFile);
+  lastIssues = parseLog(out.texLog, entry);
   if (!out.success && !lastIssues.some((i) => i.level === 'error')) {
     const tail = out.texLog.trim().split('\n').slice(-6).join('\n');
     lastIssues.unshift({ level: 'error', message: 'コンパイルに失敗しました。生ログを確認してください。', context: tail });
@@ -525,16 +557,19 @@ async function handleResult(out: CompileOutput): Promise<void> {
   renderIssues();
   applyDiagnostics();
   const sec = (out.ms / 1000).toFixed(1);
+  const name = entry.split('/').pop()!;
   if (out.success && out.pdf) {
     hideOverlay();
     lastPdf = out.pdf;
+    lastPdfSource = entry;
     synctex = out.synctex ? SyncTex.fromGzip(out.synctex) : null;
     await pdfView.load(out.pdf);
     ($('#download-pdf') as HTMLButtonElement).disabled = false;
     void setMeta(`pdf:${project.id}`, out.pdf);
-    $('#compile-status').textContent = `✓ ${sec} 秒 · ${out.passes} パス · ${pdfView.numPages} ページ`;
+    void setMeta(`pdfsource:${project.id}`, entry);
+    $('#compile-status').textContent = `✓ ${name} · ${sec} 秒 · ${out.passes} パス · ${pdfView.numPages} ページ`;
   } else {
-    $('#compile-status').textContent = `✗ エラー (${sec} 秒)`;
+    $('#compile-status').textContent = `✗ ${name} · エラー (${sec} 秒)`;
     if (!lastPdf) showOverlay('コンパイルに失敗しました。<br>下のログでエラーを確認してください。');
     openLog();
   }
@@ -920,21 +955,33 @@ function openCompileMenu(anchor: HTMLElement): void {
   const r = anchor.getBoundingClientRect();
   const menu = document.createElement('div');
   menu.className = 'context-menu';
-  const add = (label: string, hint: string, fn: () => void) => {
+  const add = (label: string, hint: string, fn: () => void, disabled = false) => {
     const b = document.createElement('button');
     b.innerHTML = `${label}<span class="hint">${hint}</span>`;
+    b.disabled = disabled;
     b.addEventListener('click', () => {
       menu.remove();
       fn();
     });
     menu.appendChild(b);
   };
-  add('高速コンパイル', '1 パス + 自動再実行', () => void compile(false));
-  add('完全ビルド', 'BibTeX / Biber / 索引 / 複数パス', () => void compile(true));
+  const mainName = escapeHtml(project?.settings.mainFile ?? '');
+  add('高速コンパイル', `${mainName} · 1 パス + 自動再実行`, () => void compile(false));
+  add('完全ビルド', `${mainName} · BibTeX / Biber / 索引 / 複数パス`, () => void compile(true));
   add('補助ファイルを消去して完全ビルド', '.aux などのキャッシュを破棄', () => {
     compiler.resetAux(project?.id ?? '');
     void compile(true);
   });
+  menu.appendChild(document.createElement('hr'));
+  const editing = standaloneEditingFile();
+  add(
+    '編集中のファイルをコンパイル',
+    editing
+      ? `${escapeHtml(editing)} · Ctrl+Shift+Enter`
+      : '\\documentclass を含む .tex を開いているときに使えます',
+    () => compileEditingFile(),
+    !editing,
+  );
   document.body.appendChild(menu);
   menu.style.top = `${r.bottom + 4}px`;
   menu.style.left = `${Math.max(4, r.right - menu.offsetWidth)}px`;
@@ -1062,7 +1109,8 @@ async function init(): Promise<void> {
   });
   $('#download-pdf').addEventListener('click', () => {
     if (lastPdf && project) {
-      const base = project.settings.mainFile.split('/').pop()!.replace(/\.tex$/, '');
+      const source = lastPdfSource ?? project.settings.mainFile;
+      const base = source.split('/').pop()!.replace(/\.tex$/, '');
       downloadBlob(lastPdf as BlobPart, `${base}.pdf`, 'application/pdf');
     }
   });
@@ -1082,6 +1130,11 @@ async function init(): Promise<void> {
   );
   window.addEventListener('keydown', (e) => {
     if (e.defaultPrevented) return; // エディタ側で処理済み
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'Enter') {
+      e.preventDefault();
+      compileEditingFile();
+      return;
+    }
     if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 's' || e.key === 'Enter')) {
       e.preventDefault();
       void compile(e.shiftKey);

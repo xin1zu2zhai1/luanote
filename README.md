@@ -26,6 +26,7 @@ TeX Live 2026 を WebAssembly 化した [BusyTeX](https://github.com/busytex/bus
 | --- | --- |
 | Ctrl/⌘ + S, Ctrl/⌘ + Enter | コンパイル |
 | Ctrl/⌘ + Shift + S | 完全ビルド |
+| Ctrl/⌘ + Shift + Enter | 編集中のファイルをコンパイル（`\documentclass` を含む .tex のみ。メインファイルの設定は変えない） |
 | Ctrl/⌘ + Alt + J | カーソル位置を PDF で表示 |
 | PDF をダブルクリック | ソースの該当行へ |
 | Ctrl/⌘ + ホイール（PDF 上） | ズーム |

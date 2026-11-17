@@ -98,6 +98,7 @@ const theme = EditorView.theme({
 export interface EditorCallbacks {
   onChange: (path: string, text: string) => void;
   onCompile: (full: boolean) => void;
+  onCompileEditing: () => void;
   onForwardSync: () => void;
 }
 
@@ -142,6 +143,7 @@ export class SourceEditor {
         { key: 'Mod-s', preventDefault: true, run: () => (this.cb.onCompile(false), true) },
         { key: 'Shift-Mod-s', preventDefault: true, run: () => (this.cb.onCompile(true), true) },
         { key: 'Mod-Enter', preventDefault: true, run: () => (this.cb.onCompile(false), true) },
+        { key: 'Shift-Mod-Enter', preventDefault: true, run: () => (this.cb.onCompileEditing(), true) },
         { key: 'Mod-Alt-j', preventDefault: true, run: () => (this.cb.onForwardSync(), true) },
         ...closeBracketsKeymap,
         ...defaultKeymap,
