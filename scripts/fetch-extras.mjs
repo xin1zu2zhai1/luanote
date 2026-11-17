@@ -48,6 +48,14 @@ const SOURCES = [
     only: /^pxrubrica\.sty$/,
   },
   {
+    // pTeX/upTeX 判定（\ifptex, \ifuptex）。gckanbun などが読み込む。collection-langjapanese 所属
+    name: 'ifptex',
+    repo: 'https://github.com/zr-tex8r/ifptex',
+    ref: 'v2.2c',
+    dirs: ['.'],
+    only: /^if(u?ptex)\.sty$/,
+  },
+  {
     // TeX Live の WASM ビルドに無いのでリポジトリに同梱（vendor/kanbun/SOURCE.md 参照）
     name: 'kanbun',
     local: 'vendor/kanbun',
