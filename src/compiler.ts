@@ -19,6 +19,8 @@ export interface CompileOutput {
   pdf?: Uint8Array;
   synctex?: Uint8Array;
   log: string;
+  /** TeX のログ以外の原因による失敗（メモリ不足など） */
+  error?: string;
   /** 最後の TeX パスの .log 本文 */
   texLog: string;
   passes: number;
@@ -30,6 +32,8 @@ export type EngineStatus =
   | { state: 'loading'; percent: number; label: string }
   | { state: 'ready'; label: string }
   | { state: 'error'; message: string };
+
+const OOM_PATTERN = /Cannot enlarge memory|memory exhausted|Aborted\(OOM\)/;
 
 // 補助ファイル。次回のコンパイルに引き継いで 1 パスで済むようにする
 const AUX_EXT = /\.(aux|toc|lof|lot|loa|out|bbl|nav|snm|vrb|ind|gls|glg|acr|brf|thm|xref|lol)$/i;
@@ -98,6 +102,14 @@ export class LuaLatexCompiler {
     );
     await this.initPromise;
     return runner;
+  }
+
+  /** エンジンを破棄する（次回のコンパイルで作り直す） */
+  private dropRunner(): void {
+    this.runner?.terminate();
+    this.runner = null;
+    this.initPromise = null;
+    this.runnerKey = '';
   }
 
   /** 補助ファイルのキャッシュを破棄（プロジェクト切替時など） */
@@ -174,6 +186,21 @@ export class LuaLatexCompiler {
       );
       passes += result.logs?.filter((l) => !/^(bibtex|biber|makeindex)/.test(l.cmd)).length ?? 1;
       logs.push(result.log);
+
+      // WASM のメモリ不足。終了コードや PDF が不完全なまま返ることがあるので失敗として扱い、
+      // 壊れた状態のエンジンは作り直す
+      if (OOM_PATTERN.test(result.log ?? '')) {
+        this.dropRunner();
+        return {
+          success: false,
+          error:
+            'エンジンのメモリが不足しました。和文フォントのサイズや書体の種類が非常に多い文書で起こることがあります。',
+          log: logs.join('\n\n'),
+          texLog: lastTexLog(result),
+          passes,
+          ms: performance.now() - t0,
+        };
+      }
 
       // 補助ファイルを回収（失敗時は不完全な .aux になり得るので更新しない）
       if (result.success) try {

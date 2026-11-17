@@ -550,7 +550,9 @@ async function handleResult(out: CompileOutput, entry: string): Promise<void> {
   if (!project) return;
   $('#log-raw').textContent = out.log;
   lastIssues = parseLog(out.texLog, entry);
-  if (!out.success && !lastIssues.some((i) => i.level === 'error')) {
+  if (out.error) {
+    lastIssues.unshift({ level: 'error', message: out.error });
+  } else if (!out.success && !lastIssues.some((i) => i.level === 'error')) {
     const tail = out.texLog.trim().split('\n').slice(-6).join('\n');
     lastIssues.unshift({ level: 'error', message: 'コンパイルに失敗しました。生ログを確認してください。', context: tail });
   }
@@ -559,11 +561,21 @@ async function handleResult(out: CompileOutput, entry: string): Promise<void> {
   const sec = (out.ms / 1000).toFixed(1);
   const name = entry.split('/').pop()!;
   if (out.success && out.pdf) {
+    // 壊れた PDF で表示処理が止まってもステータスが「コンパイル中」のまま残らないようにする
+    try {
+      await withTimeout(pdfView.load(out.pdf), 30000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      lastIssues.unshift({ level: 'error', message: `PDF を表示できませんでした: ${msg}` });
+      renderIssues();
+      $('#compile-status').textContent = `✗ ${name} · PDF を表示できません (${sec} 秒)`;
+      openLog();
+      return;
+    }
     hideOverlay();
     lastPdf = out.pdf;
     lastPdfSource = entry;
     synctex = out.synctex ? SyncTex.fromGzip(out.synctex) : null;
-    await pdfView.load(out.pdf);
     ($('#download-pdf') as HTMLButtonElement).disabled = false;
     void setMeta(`pdf:${project.id}`, out.pdf);
     void setMeta(`pdfsource:${project.id}`, entry);
@@ -573,6 +585,22 @@ async function handleResult(out: CompileOutput, entry: string): Promise<void> {
     if (!lastPdf) showOverlay('コンパイルに失敗しました。<br>下のログでエラーを確認してください。');
     openLog();
   }
+}
+
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('タイムアウトしました')), ms);
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      },
+    );
+  });
 }
 
 function setCompileUi(busy: boolean): void {

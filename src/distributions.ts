@@ -26,19 +26,17 @@ export const DISTRIBUTIONS: Distribution[] = [
     year: 2026,
     assetDir: 'core/texlive-2026',
     defaultPackageSet: 'recommended',
-    // basic は日本語組版（luatexja が xkeyval を要求）に使えないため提供しない
+    // basic は日本語組版（luatexja が xkeyval を要求）に使えないため提供しない。
+    // extra は丸ごと読み込むと 342 MB のダウンロードとメモリを使うため、latex-extra の
+    // ファイルは core/texmf-extra から必要な分だけ取得する（scripts/build-lazy-extra.mjs）。
+    // 以前 extra を選んでいたプロジェクトは recommended として扱われる。
     packageSets: [
       {
         id: 'recommended',
-        label: 'recommended',
-        description: 'latex-recommended + fonts-recommended（fontspec, unicode-math, TikZ, biblatex など）',
+        label: 'recommended + extra',
+        description:
+          'latex-recommended + fonts-recommended を読み込み、latex-extra のパッケージは使うときに取得',
         sizeMB: 201,
-      },
-      {
-        id: 'extra',
-        label: 'extra',
-        description: 'recommended + latex-extra（大半のパッケージ）',
-        sizeMB: 342,
       },
     ],
   },

@@ -11,7 +11,7 @@ TeX Live 2026 を WebAssembly 化した [BusyTeX](https://github.com/busytex/bus
 - **3 ペイン表示**: ファイルツリー / ソース（CodeMirror 6）/ PDF プレビュー（pdf.js）。ペイン幅はドラッグで調整可能。スマホではタブ切り替え。
 - **LuaLaTeX（LuaHBTeX 1.24）でレンダリング**: `fontspec`・`unicode-math`・`\directlua` などが使えます。
 - **日本語組版**: LuaTeX-ja（`ltjsarticle` など）・原ノ味フォント・`jlreq`（横書き / 縦書き）・`kanbun`（漢文訓読）を同梱。必要なファイルだけを初回使用時に読み込みます。
-- **TeX Live のバージョン・パッケージセットを選択**: 既定は TeX Live 2026。`recommended`（既定）/ `extra` から選べます（`basic` は日本語組版に必要な xkeyval などを含まないため提供していません）（`src/distributions.ts` に追加すれば他のバージョンも選択肢になります）。
+- **TeX Live 2026**: latex-recommended + fonts-recommended を読み込み、latex-extra のパッケージ（`comment`、`textpos`、`ulem` など）は使うときに必要なファイルだけ取得します（`src/distributions.ts` に追加すれば他のバージョンも選択肢になります）。
 - **高速コンパイル**: 通常は 1 パス。`.aux` / `.toc` / `.bbl` などを次回に引き継ぎ、必要なときだけ自動で再実行します。
   「完全ビルド」では BibTeX / Biber / makeindex を含めて複数パス実行します。
 - **ファイル管理**: 新規作成、フォルダ、名前の変更・移動（ドラッグ＆ドロップ可）、削除、アップロード（画像・フォント・`.sty` など）、メインファイルの指定。
@@ -33,7 +33,9 @@ TeX Live 2026 を WebAssembly 化した [BusyTeX](https://github.com/busytex/bus
 
 ## 注意事項・制限
 
-- 初回は TeX Live の WASM（約 32 MB）とパッケージデータ（recommended 201 MB / extra 342 MB）をダウンロードします。
+- 初回は TeX Live の WASM（約 32 MB）とパッケージデータ（約 201 MB）をダウンロードします。
+- エンジンのメモリ上限は配布ビルドの 576 MB から約 2 GB に引き上げています（`scripts/fetch-assets.mjs`）。
+  原ノ味フォントを多くのサイズ・書体で使う文書（ルビ・見出し・ゴシックなど）は 576 MB では足りないためです。
   2 回目以降はブラウザのキャッシュ（IndexedDB）から読み込みます。
 - 日本語組版用の追加パッケージ（`public/core/texmf-extra/`）は TeX Live 2026 の時期に合わせたバージョンに固定しています：
   LuaTeX-ja 20260130.1、原ノ味フォント 20250811、jlreq（2026-02-26 のコミット）、Adobe-Japan1 CMap。は `vendor/answerbox/` にリポジトリ内保存しています（`\usepackage{answerbox}` などで使用可）。
@@ -69,7 +71,8 @@ src/
   logparse.ts       TeX ログ解析
   store.ts          IndexedDB 永続化
 scripts/fetch-assets.mjs  WASM アセットの取得
-scripts/fetch-extras.mjs  luatexja・原ノ味フォント・jlreq の取得（リモート kpathsea 形式で配置）
+scripts/fetch-extras.mjs  luatexja・原ノ味フォント・jlreq などの取得（リモート kpathsea 形式で配置）
+scripts/build-lazy-extra.mjs  latex-extra にだけあるファイルを取り出して遅延取得用に配置
 .github/workflows/deploy.yml  GitHub Pages へのデプロイ
 ```
 
