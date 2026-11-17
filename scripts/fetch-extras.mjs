@@ -40,6 +40,14 @@ const SOURCES = [
     dirs: ['.'],
   },
   {
+    // ルビ（\ruby, \jruby）。TeX Live の collection-langjapanese に含まれるが WASM ビルドには無い
+    name: 'pxrubrica',
+    repo: 'https://github.com/zr-tex8r/PXrubrica',
+    ref: 'v1.3e',
+    dirs: ['.'],
+    only: /^pxrubrica\.sty$/,
+  },
+  {
     // TeX Live の WASM ビルドに無いのでリポジトリに同梱（vendor/kanbun/SOURCE.md 参照）
     name: 'kanbun',
     local: 'vendor/kanbun',
