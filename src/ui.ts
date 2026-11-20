@@ -10,9 +10,22 @@ export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 }
 
+/**
+ * モーダルダイアログを開く。
+ *
+ * 毎回新しい <dialog> 要素を作る。同じ要素を使い回すと、直前のダイアログを閉じたときの
+ * close イベント（非同期に届く）を次のダイアログ（askConfirm など）が自分の close と
+ * 取り違え、開いた直後に「キャンセル」扱いになる（プロジェクトの削除・名前変更が効かない）。
+ */
 export function showDialog(html: string): HTMLDialogElement {
-  const dlg = $('#dialog') as HTMLDialogElement;
-  if (dlg.open) dlg.close();
+  document.querySelectorAll<HTMLDialogElement>('dialog.dialog').forEach((old) => {
+    if (old.open) old.close();
+    // close イベントを受け取った後に取り除く
+    setTimeout(() => old.remove(), 0);
+  });
+  const dlg = document.createElement('dialog');
+  dlg.className = 'dialog';
+  document.body.appendChild(dlg);
   dlg.innerHTML = html;
   dlg.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => dlg.close()));
   dlg.showModal();
