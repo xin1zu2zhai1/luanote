@@ -424,13 +424,16 @@ async function uploadFiles(list: File[], dir: string): Promise<void> {
   toast(`${entries.length} ファイルを追加しました`);
 }
 
-async function addZipToProject(data: Uint8Array, dir: string): Promise<number> {
+/**
+ * @param stripTop true なら zip 全体を包む 1 階層のフォルダを外す（新規プロジェクトとしてのインポート用）。
+ *   既存プロジェクトへの追加では false にしてフォルダ構成を保つ（まとめて削除・移動できるように）。
+ */
+async function addZipToProject(data: Uint8Array, dir: string, stripTop = false): Promise<number> {
   if (!project) return 0;
   const unz = unzipSync(data);
-  // 共通のトップフォルダを剥がす
   const names = Object.keys(unz).filter((n) => !n.endsWith('/') && !n.startsWith('__MACOSX/'));
   const tops = new Set(names.map((n) => n.split('/')[0]));
-  const strip = tops.size === 1 && names.every((n) => n.includes('/')) ? [...tops][0] + '/' : '';
+  const strip = stripTop && tops.size === 1 && names.every((n) => n.includes('/')) ? [...tops][0] + '/' : '';
   const entries: FileEntry[] = [];
   for (const n of names) {
     const path = normalizePath(joinPath(dir, n.slice(strip.length)));
@@ -872,7 +875,7 @@ async function openProjectDialog(): Promise<void> {
     await putProject(p);
     dlg.close();
     await loadProject(p.id);
-    const n = await addZipToProject(new Uint8Array(await f.arrayBuffer()), '');
+    const n = await addZipToProject(new Uint8Array(await f.arrayBuffer()), '', true);
     // メインファイルを推定
     const texs = [...files.values()].filter((e) => e.kind === 'file' && e.path.endsWith('.tex'));
     const main =
