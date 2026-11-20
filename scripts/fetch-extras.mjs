@@ -72,6 +72,14 @@ const SOURCES = [
     only: /\.sty$/,
   },
   {
+    // 下線・傍線（\uline など）。TeX Live に無い個人配布のパッケージ（vendor/uline/SOURCE.md 参照）
+    name: 'uline',
+    local: 'vendor/uline',
+    ref: 'local',
+    dirs: ['.'],
+    only: /^uline--\.sty$/,
+  },
+  {
     // luatexja が参照する Adobe-Japan1 の CMap（TeX Live の adobemapping 相当）
     name: 'cmap-resources',
     repo: 'https://github.com/adobe-type-tools/cmap-resources',
